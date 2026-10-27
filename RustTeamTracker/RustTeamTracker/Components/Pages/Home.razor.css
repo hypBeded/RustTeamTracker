@@ -1,0 +1,345 @@
+﻿
+.dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 28px;
+    color: #e7eaf2;
+    box-sizing: border-box;
+}
+
+    .dashboard *,
+    .dashboard *::before,
+    .dashboard *::after {
+        box-sizing: border-box;
+    }
+
+.page-heading,
+.table-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.eyebrow {
+    color: #a78bfa;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 0 0 16px;
+}
+
+.page-heading h1 {
+    margin: 0;
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 750;
+    letter-spacing: -0.8px;
+    color: #e7eaf2;
+}
+
+.subtitle,
+.table-heading p,
+.stat-note {
+    color: #929bb0;
+    margin: 8px 0 0;
+}
+
+.subtitle {
+    font-size: 15px;
+}
+
+.status-badge,
+.player-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 20px;
+    padding: 7px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.status-badge {
+    background: #25243b;
+    color: #c4b5fd;
+    border: 1px solid #393452;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #a78bfa;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.stat-card,
+.table-card {
+    background: #171b29;
+    border: 1px solid #2a3042;
+    border-radius: 14px;
+}
+
+.stat-card {
+    padding: 22px;
+    min-width: 0;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+    .stat-card:hover {
+        border-color: #514477;
+        transform: translateY(-2px);
+    }
+
+.stat-label,
+.stat-note {
+    display: block;
+    font-size: 13px;
+}
+
+.stat-label {
+    color: #cbd2e1;
+}
+
+.stat-card strong {
+    display: block;
+    font-size: clamp(23px, 2vw, 32px);
+    font-weight: 750;
+    margin-top: 16px;
+    color: #f1f3fa;
+    overflow-wrap: anywhere;
+}
+
+.stat-note {
+    margin-top: 14px;
+    line-height: 1.5;
+}
+
+.table-card {
+    overflow: hidden;
+}
+
+.table-heading {
+    padding: 22px 24px 0;
+    margin-bottom: 18px;
+}
+
+    .table-heading h2 {
+        font-size: 20px;
+        font-weight: 650;
+        margin: 0;
+        color: #f1f3fa;
+    }
+
+    .table-heading p {
+        font-size: 14px;
+    }
+
+.player-count,
+.player-id {
+    color: #929bb0;
+    font-size: 12px;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #45405f #171b29;
+}
+
+    .table-responsive::-webkit-scrollbar {
+        height: 7px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #171b29;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #45405f;
+        border-radius: 10px;
+    }
+
+.players-table,
+.team-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+    .players-table th,
+    .players-table td,
+    .team-table th,
+    .team-table td {
+        padding: 16px 24px;
+        border-top: 1px solid #2a3042;
+        vertical-align: middle;
+    }
+
+    .players-table th,
+    .team-table th {
+        color: #929bb0;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        background: #191e2d;
+    }
+
+    .players-table td,
+    .team-table td {
+        font-size: 14px;
+        color: #dce1ed;
+    }
+
+    .players-table tbody tr,
+    .team-table tbody tr {
+        transition: background 0.18s ease;
+    }
+
+        .players-table tbody tr:hover,
+        .team-table tbody tr:hover {
+            background: #202436;
+        }
+
+.player-name {
+    font-weight: 650;
+    color: #f1f3fa;
+}
+
+.player-id {
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+}
+
+.player-status {
+    font-weight: 600;
+}
+
+.online {
+    color: #86efac;
+    background: #163329;
+}
+
+.afk {
+    color: #fcd34d;
+    background: #3a2c17;
+}
+
+.offline {
+    color: #aab1c2;
+    background: #292e3c;
+}
+
+.leader-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    padding: 4px 8px;
+    border: 1px solid #514477;
+    border-radius: 6px;
+    background: #332b55;
+    color: #c4b5fd;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.team-message {
+    padding: 20px 24px;
+    margin: 0;
+    color: #929bb0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.demo-note {
+    margin-top: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #929bb0;
+    overflow-wrap: anywhere;
+}
+
+/* Планшеты */
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard {
+        padding: 20px;
+    }
+
+    .players-table,
+    .team-table {
+        min-width: 700px;
+    }
+}
+
+/* Телефоны */
+@media (max-width: 480px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+        .page-heading h1 {
+            font-size: 27px;
+        }
+
+    .table-heading {
+        padding: 18px 18px 0;
+    }
+
+        .table-heading h2 {
+            font-size: 18px;
+        }
+
+    .players-table th,
+    .players-table td,
+    .team-table th,
+    .team-table td {
+        padding: 13px 16px;
+    }
+
+    .team-message {
+        padding: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-card,
+    .players-table tbody tr,
+    .team-table tbody tr {
+        transition: none;
+    }
+
+        .stat-card:hover {
+            transform: none;
+        }
+}

@@ -1,0 +1,166 @@
+﻿@page "/"
+@implements IDisposable
+@using RustTeamTracker.Services
+@inject RustPlusDashboardState Dashboard
+
+<PageTitle>Rust Team Tracker</PageTitle>
+
+<div class="dashboard">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">RUST TEAM TRACKER</p>
+            <h1>Статистика команды</h1>
+            <p class="subtitle">
+                Мониторинг онлайна и игровой активности
+            </p>
+        </div>
+
+        <span class="status-badge">
+            <span class="status-dot"></span>
+            @Dashboard.ConnectionStatus
+        </span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Игроков на сервере</span>
+            <strong>@Dashboard.ServerPlayerCount</strong>
+            <span class="stat-note">
+                из @Dashboard.ServerMaxPlayerCount мест
+            </span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Время в игре</span>
+            <strong>—</strong>
+            <span class="stat-note">
+                История ещё не собирается
+            </span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Время AFK</span>
+            <strong>—</strong>
+            <span class="stat-note">
+                Нет данных активности
+            </span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Сейчас AFK</span>
+            <strong>—</strong>
+            <span class="stat-note">
+                Требуется сбор активности
+            </span>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-heading">
+            <div>
+                <h2>Игроки команды</h2>
+                <p>Статистика участников Rust+</p>
+            </div>
+        </div>
+
+        
+        <div class="table-responsive">
+            @if (!string.IsNullOrWhiteSpace(Dashboard.TeamError))
+            {
+                <p class="team-message">
+                    Ошибка получения состава: @Dashboard.TeamError
+                </p>
+            }
+            else if (Dashboard.TeamPlayers.Count == 0)
+            {
+                <p class="team-message">
+                    Команда пуста или данные ещё загружаются.
+                </p>
+            }
+            else
+            {
+                <table class="team-table">
+                    <thead>
+                        <tr>
+                            <th>Игрок</th>
+                            <th>Steam ID</th>
+                            <th>Статус</th>
+                            <th>Состояние</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var player in Dashboard.TeamPlayers)
+                        {
+                            <tr @key="player.SteamId">
+                                <td>
+                                    <strong>@player.Name</strong>
+                                    @if (player.IsLeader)
+                                    {
+                                        <span class="leader-badge">Лидер</span>
+                                    }
+                                </td>
+                                <td>@player.SteamId</td>
+                                <td>
+                                    <span class="player-status @(player.IsOnline ? "online" : "offline")">
+                                        @(player.IsOnline ? "В сети" : "Не в сети")
+                                    </span>
+                                </td>
+                                <td>@(player.IsAlive ? "Жив" : "Мёртв")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+    </div>
+
+    <p class="demo-note">
+        Сервер: @Dashboard.ServerName
+        @if (Dashboard.LastUpdated is not null)
+        {
+            <span>
+                · Обновлено: @Dashboard.LastUpdated.Value.ToString("HH:mm:ss")
+            </span>
+        }
+    </p>
+</div>
+
+@code {
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _cts;
+
+    protected override void OnInitialized()
+    {
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _cts = new CancellationTokenSource();
+        _ = RefreshAsync(_cts.Token);
+    }
+
+    private async Task RefreshAsync(CancellationToken token)
+    {
+        try
+        {
+            while (_timer is not null &&
+                   await _timer.WaitForNextTickAsync(token))
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Страница закрывается.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Таймер уже остановлен.
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+    }
+}

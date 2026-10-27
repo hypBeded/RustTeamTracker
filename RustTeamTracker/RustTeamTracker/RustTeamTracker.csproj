@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.14" />
+    <PackageReference Include="RustPlusApi" Version="1.4.0" />
+    <PackageReference Include="RustPlusApi.Fcm" Version="2.0.0-beta.9" />
+    <PackageReference Include="RustPlusApi.Fcm.Registration" Version="2.0.0-beta.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Config\rustplus.config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

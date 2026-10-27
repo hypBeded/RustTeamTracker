@@ -1,0 +1,52 @@
+﻿@page "/rustplus"
+@implements IDisposable
+@using RustTeamTracker.Services
+@inject RustPlusRegistrationService Registration
+
+<PageTitle>Подключение Rust+</PageTitle>
+
+<h1>Подключение Rust+</h1>
+
+<p>Статус: <strong>@Registration.Status</strong></p>
+
+@if (!string.IsNullOrWhiteSpace(Registration.LoginUrl))
+{
+    <p>
+        <a href="@Registration.LoginUrl" target="_blank" rel="noopener noreferrer">
+            Открыть страницу входа через Steam
+        </a>
+    </p>
+}
+
+@if (!string.IsNullOrWhiteSpace(Registration.ServerName))
+{
+    <p>Сервер: @Registration.ServerName</p>
+}
+
+<button class="btn btn-primary"
+        @onclick="StartRegistration"
+        disabled="@Registration.IsRunning">
+    @(Registration.IsRunning ? "Регистрация выполняется…" : "Подключить Rust+")
+</button>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Registration.StateChanged += OnStateChanged;
+    }
+
+    private async Task StartRegistration()
+    {
+        await Registration.RegisterAsync();
+    }
+
+    private void OnStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Registration.StateChanged -= OnStateChanged;
+    }
+}
