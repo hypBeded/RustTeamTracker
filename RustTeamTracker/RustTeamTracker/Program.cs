@@ -9,34 +9,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Debug);
 builder.Logging.AddConsole();
 
-// Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// SQLite
 builder.Services.AddDbContextFactory<AppDbContext>(
-    options => options.UseSqlite(
-        "Data Source=rustteamtracker.db"));
+    options => options.UseSqlite("Data Source=rustteamtracker.db"));
 
-// Application services
 builder.Services.AddScoped<PlayerService>();
-builder.Services.AddSingleton<RustPlusRegistrationService>();
-
-var rustPlusConfigPath = Path.Combine(
-    builder.Environment.ContentRootPath,
-    "Config",
-    "rustplus.config.json");
-
-builder.Configuration["RustPlus:ConfigPath"] = rustPlusConfigPath;
-
-builder.Services.AddHostedService<RustPlusClientService>();
 
 builder.Services.AddSingleton<RustPlusDashboardState>();
-
-
-
-
-
+builder.Services.AddSingleton<PlayerActivityService>();
+builder.Services.AddSingleton<RustPlusRegistrationService>();
+builder.Services.AddSingleton<ServerWipeService>();
+builder.Services.AddHostedService<RustPlusClientService>();
 
 var app = builder.Build();
 
@@ -71,5 +56,40 @@ app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<AppDbContext>>();
+
+    await using var db = await factory.CreateDbContextAsync();
+
+    await db.Database.ExecuteSqlRawAsync("""
+        CREATE TABLE IF NOT EXISTS ServerWipes (
+            Id INTEGER NOT NULL
+                CONSTRAINT PK_ServerWipes PRIMARY KEY AUTOINCREMENT,
+            WipeTimeUtc TEXT NOT NULL,
+            ServerName TEXT NOT NULL,
+            FirstDetectedAtUtc TEXT NOT NULL
+        );
+        """);
+
+    await db.Database.ExecuteSqlRawAsync("""
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        IX_ServerWipes_WipeTimeUtc
+        ON ServerWipes (WipeTimeUtc);
+        """);
+    await db.Database.ExecuteSqlRawAsync("""
+    CREATE TABLE IF NOT EXISTS AfkPeriods (
+        Id INTEGER NOT NULL
+            CONSTRAINT PK_AfkPeriods PRIMARY KEY AUTOINCREMENT,
+        SteamId TEXT NOT NULL,
+        StartedAtUtc TEXT NOT NULL,
+        EndedAtUtc TEXT NULL
+    );
+    """);
+}
+
 
 app.Run();

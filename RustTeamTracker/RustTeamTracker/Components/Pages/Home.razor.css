@@ -22,6 +22,29 @@
     margin-bottom: 24px;
 }
 
+.wipe-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+    .wipe-toolbar label {
+        font-weight: 600;
+    }
+
+    .wipe-toolbar select {
+        min-width: 260px;
+        max-width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #394150;
+        border-radius: 8px;
+        background: #151a23;
+        color: inherit;
+    }
+
 .eyebrow {
     color: #a78bfa;
     font-size: 12px;

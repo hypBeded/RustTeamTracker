@@ -11,6 +11,8 @@ public sealed class RustTeamPlayer
     public bool IsOnline { get; set; }
     public bool IsAlive { get; set; }
     public bool IsLeader { get; set; }
+    public float X { get; set; }
+    public float Y { get; set; }
 }
 
 public sealed class RustPlusDashboardState

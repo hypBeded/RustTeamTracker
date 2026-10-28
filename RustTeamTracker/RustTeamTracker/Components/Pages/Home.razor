@@ -1,7 +1,11 @@
 ﻿@page "/"
 @implements IDisposable
 @using RustTeamTracker.Services
+@using RustTeamTracker.Models
 @inject RustPlusDashboardState Dashboard
+@inject ServerWipeService WipeService
+@inject PlayerActivityService Activity
+@rendermode InteractiveServer
 
 <PageTitle>Rust Team Tracker</PageTitle>
 
@@ -32,26 +36,22 @@
 
         <div class="stat-card">
             <span class="stat-label">Время в игре</span>
-            <strong>—</strong>
+            <strong>@FormatDuration(_teamOnlineSeconds)</strong>
             <span class="stat-note">
-                История ещё не собирается
+                Суммарное время команды за выбранный вайп
             </span>
         </div>
 
         <div class="stat-card">
-            <span class="stat-label">Время AFK</span>
-            <strong>—</strong>
-            <span class="stat-note">
-                Нет данных активности
-            </span>
+                <span class="stat-label">Время AFK</span>
+                <strong>@FormatDuration(_teamAfkSeconds)</strong>
+                <span class="stat-note">Суммарное время команды за выбранный вайп</span>
         </div>
 
         <div class="stat-card">
             <span class="stat-label">Сейчас AFK</span>
-            <strong>—</strong>
-            <span class="stat-note">
-                Требуется сбор активности
-            </span>
+            <strong>@_currentlyAfk.Count</strong>
+            <span class="stat-note">Игроков без движения более 5 минут</span>
         </div>
     </div>
 
@@ -63,7 +63,31 @@
             </div>
         </div>
 
-        
+        <div class="wipe-toolbar">
+            <label for="wipe-select">История вайпов</label>
+
+            @if (_wipes.Count == 0)
+            {
+                <span class="wipe-empty">
+                    Вайпы пока не обнаружены
+                </span>
+            }
+            else
+            {
+                <select id="wipe-select"
+                        value="@_selectedWipeId"
+                        @onchange="OnWipeChanged">
+                    @foreach (var wipe in _wipes)
+                    {
+                        <option value="@wipe.Id">
+                            @wipe.WipeTimeUtc.ToString("dd.MM.yyyy HH:mm")
+                            — @wipe.ServerName
+                        </option>
+                    }
+                </select>
+            }
+        </div>
+
         <div class="table-responsive">
             @if (!string.IsNullOrWhiteSpace(Dashboard.TeamError))
             {
@@ -86,11 +110,17 @@
                             <th>Steam ID</th>
                             <th>Статус</th>
                             <th>Состояние</th>
+                            <th>Онлайн за вайп</th>
+                            <th>AFK за вайп</th>
+                            <th>Активность</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var player in Dashboard.TeamPlayers)
                         {
+                            var steamId = player.SteamId.ToString();
+                            var seconds = _wipeSeconds.GetValueOrDefault(steamId);
+
                             <tr @key="player.SteamId">
                                 <td>
                                     <strong>@player.Name</strong>
@@ -106,13 +136,34 @@
                                     </span>
                                 </td>
                                 <td>@(player.IsAlive ? "Жив" : "Мёртв")</td>
+                                <td>
+                                    <strong>@FormatDuration(seconds)</strong>
+                                </td>
+                                <td>
+                                    <strong>
+                                        @FormatDuration(_wipeAfkSeconds.GetValueOrDefault(steamId))
+                                    </strong>
+                                </td>
+                                <td>
+                                    @if (!player.IsOnline)
+                                    {
+                                        <span class="player-status offline">Не в сети</span>
+                                    }
+                                    else if (_currentlyAfk.Contains(steamId))
+                                    {
+                                        <span class="player-status afk">AFK</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="player-status online">Активен</span>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             }
         </div>
-
     </div>
 
     <p class="demo-note">
@@ -130,11 +181,83 @@
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _cts;
 
-    protected override void OnInitialized()
+    private List<ServerWipe> _wipes = [];
+    private int? _selectedWipeId;
+    private Dictionary<string, int> _wipeSeconds = new();
+    private int _teamOnlineSeconds;
+    private Dictionary<string, int> _wipeAfkSeconds = new();
+    private HashSet<string> _currentlyAfk = new();
+    private int _teamAfkSeconds;
+
+    protected override async Task OnInitializedAsync()
     {
-        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        await LoadWipesAsync();
+
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
         _cts = new CancellationTokenSource();
+
         _ = RefreshAsync(_cts.Token);
+    }
+
+    private async Task LoadWipesAsync()
+    {
+        _wipes = await WipeService.GetWipesAsync();
+
+        if (_wipes.Count == 0)
+        {
+            _selectedWipeId = null;
+            _wipeSeconds.Clear();
+            _wipeAfkSeconds.Clear();
+            _currentlyAfk.Clear();
+            _teamOnlineSeconds = 0;
+            _teamAfkSeconds = 0;
+            return;
+        }
+
+        // GetWipesAsync возвращает вайпы от новых к старым.
+        if (_selectedWipeId is null ||
+            !_wipes.Any(w => w.Id == _selectedWipeId))
+        {
+            _selectedWipeId = _wipes[0].Id;
+        }
+
+        await LoadSelectedWipeStatsAsync();
+    }
+
+    private async Task OnWipeChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var id))
+        {
+            _selectedWipeId = id;
+            await LoadSelectedWipeStatsAsync();
+        }
+    }
+
+    private async Task LoadSelectedWipeStatsAsync()
+    {
+        var selected = _wipes.FirstOrDefault(
+            w => w.Id == _selectedWipeId);
+
+        if (selected is null)
+        {
+            _wipeSeconds.Clear();
+            _wipeAfkSeconds.Clear();
+            _currentlyAfk.Clear();
+            _teamOnlineSeconds = 0;
+            _teamAfkSeconds = 0;
+            return;
+        }
+
+        _wipeSeconds = await Activity.GetWipeOnlineSecondsAsync(
+            selected.WipeTimeUtc);
+
+        _wipeAfkSeconds = await Activity.GetWipeAfkSecondsAsync(
+            selected.WipeTimeUtc);
+
+        _currentlyAfk = await Activity.GetCurrentlyAfkSteamIdsAsync();
+
+        _teamOnlineSeconds = _wipeSeconds.Values.Sum();
+        _teamAfkSeconds = _wipeAfkSeconds.Values.Sum();
     }
 
     private async Task RefreshAsync(CancellationToken token)
@@ -144,7 +267,11 @@
             while (_timer is not null &&
                    await _timer.WaitForNextTickAsync(token))
             {
-                await InvokeAsync(StateHasChanged);
+                await InvokeAsync(async () =>
+                {
+                    await LoadWipesAsync();
+                    StateHasChanged();
+                });
             }
         }
         catch (OperationCanceledException)
@@ -155,6 +282,16 @@
         {
             // Таймер уже остановлен.
         }
+        catch (Exception)
+        {
+            // Временная ошибка обновления не должна завершать UI-цикл.
+        }
+    }
+
+    private static string FormatDuration(int totalSeconds)
+    {
+        var time = TimeSpan.FromSeconds(Math.Max(0, totalSeconds));
+        return $"{(int)time.TotalHours:D2}:{time.Minutes:D2}";
     }
 
     public void Dispose()
